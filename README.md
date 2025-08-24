@@ -37,7 +37,7 @@ A comprehensive, AI-powered personal productivity assistant built with React, Ty
 
 ### **1. Clone & Install**
 ```bash
-git clone https://github.com/YOUR_USERNAME/my_personal_assistant.git
+git clone https://github.com/PrabodhBharadwaj/my_personal_assistant.git
 cd my_personal_assistant
 npm install
 ```
@@ -68,7 +68,7 @@ Open [http://localhost:5173](http://localhost:5173)
 
 ## 🌐 **Live Demo**
 
-Visit the live application: [https://YOUR_USERNAME.github.io/my_personal_assistant](https://YOUR_USERNAME.github.io/my_personal_assistant)
+Visit the live application: [https://prabodhbharadwaj.github.io/my_personal_assistant](https://prabodhbharadwaj.github.io/my_personal_assistant)
 
 ## 🏗️ **Architecture**
 
