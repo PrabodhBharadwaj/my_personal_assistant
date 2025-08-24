@@ -274,3 +274,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 **Built with ❤️ for personal productivity and AI exploration**
 
 Your personal AI assistant is ready to help you capture, organize, and act on life's inputs effortlessly! 🎯
+
+---
+
+> **📢 Repository Status**: This repository is now public to enable GitHub Pages deployment.
