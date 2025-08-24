@@ -1,0 +1,501 @@
+PRD: Personal AI Assistant MVP (Revised)
+Table of Contents
+1. tl;dr
+2. Goals & Context
+3. User Stories
+4. Feature Requirements (MVP)
+5. User Flows
+6. Non-f
+unctional Requirements
+7. Success Metrics
+8. Technical Architecture
+9. Milestones & Sequencing
+10. Risk Mitigation
+11. What's Next
+1. tl;dr
+Building a personal AI assistant to help me capture, organize, and act on life's inputs effortlessly.
+Starting with the absolute essentials that I need daily, then expanding based on what actually works for
+my workflow.
+True MVP Focus (Phase 1 - 4 weeks):
+Universal capture (text + voice)
+Basic task storage with simple retrieval
+One AI feature: Daily planning assistant
+Phase 2 (if Phase 1 works - 3 weeks):
+Contextual recommendations
+Basic semantic search
+This is a personal-first approach that can scale to others later if successf
+ul.
+2. Goals & Context
+Personal Context
+Builder: Designer with limited coding experience
+Development Approach: AI-assisted coding (ChatGPT/Claude)
+Budget: $0-20/month maximum
+Primary User: Myself (N=1)
+Timeline: Evenings/weekends over 4-7 weeks
+Personal Goals
+Reduce Mental Overhead: Stop losing tasks/ideas in various note apps
+Better Daily Planning: Start each day with clarity on priorities
+Single Capture Point: One place for all thoughts, tasks, and ideas
+Learn by Building: Improve technical skills through practical project
+Business Goals (Future)
+Validate Personal Productivity Tools: Understand what actually helps vs. feels helpf
+ul
+Foundation for Scale: If successf
+ul personally, consider broader audience
+AI Integration Experience: Learn practical AI product integration
+Non-Goals (Explicit)
+Not solving for others (yet) - no user research needed
+Not enterprise-ready - personal use quality standards
+Not monetization-focused - learning and personal utility first
+Not comprehensive productivity suite - focused on specific pain points
+3. User Stories
+Primary Persona: Myself (Busy Designer/Builder)
+Daily Capture Scenarios:
+As myself, I want to quickly log random ideas while walking so they don't disappear
+As myself, I want to capture meeting outcomes without opening multiple apps
+As myself, I want to dump brain clutter before bed so I can sleep better
+Planning & Organization:
+As myself, I want to start each morning with a clear sense of the day ahead
+As myself, I want the AI to organize my scattered thoughts into actionable structure
+As myself, I want to find that book recommendation from last month without scrolling
+Context & Recommendations:
+As myself, I want date ideas when I'm tired and can't think creatively
+As myself, I want workout suggestions based on my energy level and available time
+As myself, I want the system to surface relevant past notes when planning similar activities
+4. Feature Requirements (MVP)
+Phase 1: Core MVP (Must-Have)
+1. Universal Capture
+Functionality:
+Simple text input (chat-style interface)
+Voice input using browser speech-to-text API
+Auto-save with timestamp on every entry
+No categorization required - capture everything as "items"
+Acceptance Criteria:
+Can input text and hit enter to save
+Voice button records and converts to text accurately
+All items persist between browser sessions
+Mobile-responsive for phone use
+2. Basic Storage & Retrieval
+Functionality:
+View all captured items in chronological order
+Simple keyword search through all items
+Mark items as completed/archived
+Export all data as JSON backup
+Acceptance Criteria:
+Search returns relevant results within 1 second
+Completed items are visually distinct but not deleted
+Export downloads complete data backup
+No data loss between sessions
+3. Daily Planning Assistant
+Functionality:
+Command input: "Plan my day" or "What should I focus on today?"
+AI analyzes current items and suggests daily structure
+Option to accept, modify, or regenerate suggestions
+Simple prompt engineering for consistent usef
+ul output
+Acceptance Criteria:
+Planning request completes in under 5 seconds
+O
+utput is actionable and contextually relevant
+Works with 5-50 items in the system
+Costs under $1/month in API usage
+Phase 2: Enhanced Features (Nice-to-Have)
+4. Contextual Recommendations
+Functionality:
+Context-aware queries: "Date ideas, low energy, indoor"
+AI combines stored items with generated suggestions
+Filtered by attributes I define (mood, energy, location)
+5. Semantic Search & Summarization
+Functionality:
+"Summarize my notes about X" queries
+Semantic similarity search beyond keywords
+Highlight key themes across related items
+Explicitly NOT in MVP
+Complex task management (projects, dependencies, deadlines)
+Calendar integration
+Multi-user features or sharing
+Advanced analytics or habit tracking
+Mobile app (web-first)
+Real-time sync across devices
+Templates or workflow automation
+5. User Flows
+Flow 1: Quick Capture
+Input: "Call mom about birthday dinner plans"
+Input: "Call mom about birthday dinner plans"
+System: Auto-saves with timestamp
+System: Auto-saves with timestamp
+O
+utput: Item appears in feed, input clears
+utput: Item appears in feed, input clearsO
+Time: <2 seconds
+Time: <2 seconds
+Flow 2: Voice Capture
+User: Clicks microphone button
+User: Clicks microphone button
+System: Browser asks for mic permission (first time)
+System: Browser asks for mic permission (first time)
+User: "Remember to check that design system update"
+User: "Remember to check that design system update"
+System: Speech-to-text conversion, auto-save
+System: Speech-to-text conversion, auto-save
+O
+O
+utput: Text appears in feed with voice indicator
+utput: Text appears in feed with voice indicator
+Time: <3 seconds
+Time: <3 seconds
+Flow 3: Daily Planning
+Input: "Plan my day"
+Input: "Plan my day"
+System:
+System:
+- Retrieves all incomplete items
+- Retrieves all incomplete items
+- Sends to OpenAI with planning prompt
+- Sends to OpenAI with planning prompt
+- Returns structured daily schedule
+- Returns structured daily schedule
+utput:
+O
+O
+utput:
+"Morning: Focus on design system updates
+"Morning: Focus on design system updates
+Afternoon: Call mom about dinner
+Afternoon: Call mom about dinner
+Evening: Review weekend plans"
+Evening: Review weekend plans"
+Time: <5 seconds
+Time: <5 seconds
+Flow 4: Search & Retrieval
+Input: Search "design system"
+Input: Search "design system"
+System: Keyword search through all items
+System: Keyword search through all items
+O
+O
+utput: List of matching items with relevance
+utput: List of matching items with relevance
+User: Can click any item to see f
+User: Can click any item to see f
+ull context
+ull context
+Time: <1 second
+Time: <1 second
+Flow 5: Data Export
+User: Clicks export button
+User: Clicks export button
+System: Generates JSON file with all data
+System: Generates JSON file with all data
+O
+O
+utput: Download starts automatically
+utput: Download starts automatically
+Purpose: Backup and migration safety
+Purpose: Backup and migration safety
+6. Non-f
+unctional Requirements
+Performance
+Capture Response: <2 seconds for text, <3 seconds for voice
+Search Response: <1 second for keyword search
+AI Planning: <5 seconds for daily planning requests
+Offline Capability: Works without internet (except AI features)
+Reliability
+Data Persistence: 100% reliability with localStorage
+Browser Compatibility: Chrome, Safari, Firefox on mobile + desktop
+Error Handling: Gracef
+ul degradation when AI API unavailable
+Usability
+Mobile-First: Thumb-friendly on phone screens
+Minimal Learning Curve: Should be intuitive within 5 minutes
+Fast Input: Optimized for quick capture scenarios
+Security & Privacy
+Local Data: Everything stored in browser initially
+API Keys: Stored securely, user-controlled
+No Tracking: No analytics or external data collection
+Scalability (Future)
+Data Export: JSON format for easy migration
+Architecture: Can migrate to cloud database without data loss
+API Design: RESTf
+ul patterns for f
+uture mobile app
+7. Success Metrics
+Phase 1 Success Criteria (Personal Use)
+Usage Metrics
+Daily Usage: I use capture feature 5+ days/week
+Data Accumulation: 50+ meaningf
+ul items in first month
+Feature Adoption: Daily planning used 3+ times/week
+Retention: Still using after 1 month of availability
+Utility Metrics
+Time Savings: Daily planning saves 10+ minutes of morning mental overhead
+Capture Rate: 80% of intended items actually get captured vs. forgotten
+Search Success: Find desired items 90%+ of the time
+Natural Usage: Reach for this tool instead of Notes app or Reminders
+Quality Metrics
+AI Usef
+ulness: Daily plans are actionable 70%+ of the time
+Zero Data Loss: No items lost due to technical issues
+Response Speed: All interactions feel instant (<3s)
+Phase 2 Success Criteria
+Recommendations: 30%+ of AI suggestions are actually usef
+ul
+Search Evolution: Semantic search finds items keyword search missed
+Complexity Justified: Enhanced features worth the added technical complexity
+Migration to "Product for Others" Triggers
+Personal Success: Consistent usage for 3+ months
+External Interest: Friends/colleagues ask about it unprompted
+Clear Value Prop: Can articulate what works vs. what doesn't
+Technical Confidence: Comfortable with the codebase and architecture
+8. Technical Architecture
+Option A: Free/Ultra-Low Cost Setup ($0-5/month)
+Frontend:
+Simple HTM
+L/CSS/JavaScript (vanilla, no frameworks)
+Hosted on GitHub Pages (free)
+Progressive Web App features for mobile
+Storage:
+Browser localStorage for all data
+Manual JSON export/import for backups
+No server-side storage initially
+AI Integration:
+OpenAI API pay-per-use (~$2-5/month for personal use)
+Direct API calls from frontend (API key in localStorage)
+Rate limiting to prevent cost overruns
+Advantages:
+Zero infrastructure costs
+Perfect for AI-assisted development
+No backend complexity
+Instant deployment
+Limitations:
+Single-device only (no sync)
+Manual backup required
+API key exposed in browser
+Option B: Basic Cloud Setup ($10-20/month)
+Frontend:
+Next.js deployed on Vercel (free tier)
+React components for better UX
+Automatic mobile optimization
+Backend:
+Supabase (free tier: 500MB database, auth)
+PostgreSQL for structured data
+Built-in authentication and API
+AI Integration:
+OpenAI API through backend (~$5-10/month)
+Server-side API key management
+Request caching to reduce costs
+Storage:
+Supabase database with automatic backups
+Cross-device synchronization
+Offline-first with sync when online
+Migration Path: Start with Option A → Move to Option B when single-device becomes limiting
+Recommended Tech Stack Evolution
+Phase 1 (Week 1-4):
+Frontend: HTM
+Frontend: HTM
+L/CSS/JavaScript
+L/CSS/JavaScript
+Storage: localStorage + JSON export
+Storage: localStorage + JSON export
+AI: Direct OpenAI API calls
+AI: Direct OpenAI API calls
+Hosting: GitHub Pages
+Hosting: GitHub Pages
+Development: AI-assisted coding with simple examples
+Development: AI-assisted coding with simple examples
+Phase 2 (When Ready to Scale):
+Frontend: Next.js (AI tools handle React well)
+Frontend: Next.js (AI tools handle React well)
+Backend: Supabase (automatic API, auth, database)
+Backend: Supabase (automatic API, auth, database)
+Storage: PostgreSQL
+Storage: PostgreSQL
+with real-time subscriptions
+with real-time subscriptions
+AI: Server-side OpenAI integration with caching
+AI: Server-side OpenAI integration with caching
+Development Tools & AI-Assisted Coding
+AI Coding Strategy:
+Start with simple HTM
+L/JS templates
+Use incremental prompts: "Add voice input to this interface"
+Copy and modify working examples rather than building from scratch
+Test frequently after each AI-generated change
+Recommended AI Prompts:
+"Create a simple chat interface with localStorage persistence"
+"Add speech-to-text f
+unctionality using browser APIs"
+"Integrate OpenAI API for text processing in JavaScript"
+"Make this interface mobile-responsive"
+9. Milestones & Sequencing
+Phase 1: Core MVP (4 weeks)
+Week 1: Foundation
+Goals: Basic capture and display working Deliverables:
+Simple HTM
+L page with chat-style input
+Items saved to localStorage with timestamps
+Basic list display of all items
+Mobile-responsive layout
+AI Coding Focus: Get comfortable with AI-assisted development workflow
+Success Criteria:
+Can capture and view items
+Data persists between browser sessions
+Interface works on mobile phone
+Week 2: Storage & Retrieval
+Goals: Make captured data usef
+ul Deliverables:
+Keyword search f
+unctionality
+Mark items complete/archive
+JSON export feature for backup
+Basic item management (delete, edit)
+Success Criteria:
+Can find specific items quickly
+No risk of data loss
+Started using for real capture daily
+Week 3: AI Integration
+Goals: Daily planning assistant working Deliverables:
+OpenAI API integration
+"Plan my day" command f
+unctional
+Prompt engineering for usef
+ul output
+Error handling for API failures
+Success Criteria:
+AI planning saves mental effort
+Responses are contextually relevant
+Costs stay under $5/month
+Week 4: Polish & Testing
+Goals: Ready for daily use Deliverables:
+UI improvements based on usage
+Voice input working reliably
+Performance optimization
+Bug fixes from daily testing
+Success Criteria:
+Using daily without friction
+Friends/family can try it and understand immediately
+Confident in core f
+unctionality
+Phase 1 Decision Point
+Evaluation Questions:
+Have I used it consistently for 2+ weeks?
+Does daily planning actually improve my mornings?
+Am I naturally reaching for this instead of other tools?
+Go/No-Go for Phase 2:
+Go: All three questions are "yes" + I want more features
+No-Go: Focus on fixing Phase 1 or consider project complete
+Phase 2: Enhanced Features (3 weeks - Optional)
+Week 5-6: Contextual Recommendations
+Goals: Smart suggestions based on context Deliverables:
+Context-aware query processing
+AI-generated recommendations mixed with stored items
+Filtering by attributes (mood, energy, location)
+Week 7: Semantic Search
+Goals: Better information retrieval Deliverables:
+Basic embedding-based search
+"Summarize notes about X" f
+unctionality
+Migration preparation for cloud setup if needed
+Phase 2 Success Criteria:
+Recommendations are usef
+ul 30%+ of the time
+Semantic search finds items keyword search missed
+Enhanced complexity feels worth it
+10. Risk Mitigation
+Technical Risks
+Risk: AI-assisted coding fails, can't implement features
+Likelihood: Medium Impact: High Mitigation:
+Start with simplest possible examples
+Use multiple AI tools (ChatGPT + Claude) for different perspectives
+Focus on copying/modifying working code vs. building from scratch
+Have fallback: hire developer for 1-2 sessions if completely stuck
+Risk: OpenAI API costs spiral out of control
+Likelihood: Low Impact: Medium Mitigation:
+Set strict usage limits in OpenAI dashboard ($10/month max)
+Use cheaper models (gpt-4o-mini) for most requests
+Implement client-side rate limiting
+Monitor costs weekly, not monthly
+Risk: Data loss with localStorage approach
+Likelihood: Medium Impact: High Mitigation:
+Build export feature in Week 2 (before lots of data)
+Regular manual backups to cloud storage
+Clear migration path to Supabase when ready
+Risk: Browser compatibility issues
+Likelihood: Medium Impact: Medium Mitigation:
+Test on Chrome, Safari, Firefox from Week 1
+Use standard APIs, avoid cutting-edge features
+Gracef
+ul degradation for unsupported features
+Product Risks
+Risk: Feature creep returns, scope expands beyond MVP
+Likelihood: High Impact: Medium Mitigation:
+Strict "Phase 1 only" rule for first month
+Write down Phase 2+ ideas instead of
+building
+Weekly scope review: "Is this truly necessary for daily use?"
+Risk: Perfectionism prevents shipping
+Likelihood: Medium Impact: High Mitigation:
+"Good enough for personal use" quality standard
+Ship every Friday, even if
+buggy
+Focus on working over polished
+Risk: Lose interest before completion
+Likelihood: Medium Impact: High Mitigation:
+Focus on features I'll use immediately
+Keep scope tiny and achievable
+Celebrate small wins weekly
+Personal/Learning Risks
+Risk: Over-engineering for hypothetical f
+uture scale
+Likelihood: Medium Impact: Medium Mitigation:
+Build explicitly for N=1 (myself)
+Resist suggestions for "proper" architecture
+Optimize for learning and iteration speed
+Risk: Get stuck on technical problems for days
+Likelihood: Medium Impact: Medium Mitigation:
+Time-box problem solving (2 hours max before asking for help)
+Use AI tools for debugging and explanation
+Accept imperfect solutions that work
+11. What's Next (Beyond MVP)
+If Phase 1-2 Successf
+ul (3+ months consistent use)
+Enhanced Personal Features
+Habit & Reflection Layer: Weekly summaries, pattern recognition
+Better Mobile Experience: PWA with offline sync
+Integrations: Calendar, email, note-taking apps
+Advanced AI: Custom prompts, learning from my preferences
+Technical Evolution
+Migration to Cloud: Supabase or similar for multi-device
+Real Mobile App: React Native when web becomes limiting
+Data Analytics: Personal insights and productivity metrics
+Advanced Search: Vector embeddings for complex queries
+Potential Scale to Others (6+ months successf
+ul personal use)
+Market Validation
+User Research: Interview
+friends/colleagues about productivity pain points
+Competitive Analysis: Deep dive into existing solutions
+Value Proposition: Clearly articulate unique benefits
+Product Development
+Multi-user Architecture: User accounts, data privacy
+Onboarding Flow: Help others get value quickly
+Monetization Strategy: Subscription tiers, pricing validation
+Support Systems: Documentation, help resources
+Business Considerations
+Go-to-Market: How to reach busy professionals effectively
+Competitive Moats: What prevents others from copying?
+Unit Economics: Cost structure and revenue projections
+Team Building: When to hire first developer/designer
+Success Metrics for Scale Decision
+Personal Validation: 6+ months of daily use without major complaints
+External Interest: 10+ people ask to use it after seeing me use it
+Market Research: Clear evidence others have similar problems
+Technical Confidence: Comfortable with architecture and can explain benefits
+Business Interest: Genuinely excited about building it for others vs. obligation
+Conclusion
+This PRD represents a disciplined approach to building a personal AI assistant that prioritizes learning,
+utility, and realistic scope. The key insight is building for N=1 first, then scaling only if successf
+ul.
+The success of this project will be measured not by features built, but by whether it genuinely
+improves daily productivity and becomes a natural part of my workflow. Everything else is secondary.
+Next Action: Begin Week 1 development with first AI coding session to create basic capture interface.
