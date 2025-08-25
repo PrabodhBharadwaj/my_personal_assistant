@@ -467,10 +467,16 @@ ${incompleteItems.length > 4 ? `\nRemaining items: ${incompleteItems.length - 4}
         (item) => item.status !== 'completed' && item.item_type === 'capture'
       );
       const currentDate = new Date().toLocaleDateString();
+      const currentTime = new Date().toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      });
 
       const planningRequest: PlanningRequest = {
         incompleteTasks: incompleteItems.map((item) => item.content),
         currentDate,
+        currentTime,
         userContext:
           incompleteItems.length === 0
             ? 'No incomplete tasks found'
@@ -1081,12 +1087,22 @@ Examples:
                 className={`item ${item.status === 'completed' ? 'completed' : ''} ${item.status === 'archived' ? 'archived' : ''} ${item.item_type} ${selectedItems.has(item.id) ? 'selected' : ''}`}
               >
                 <div className="item-header">
-                  <input
-                    type="checkbox"
-                    checked={selectedItems.has(item.id)}
-                    onChange={() => toggleItemSelection(item.id)}
-                    className="item-checkbox"
-                  />
+                  <div className="checkbox-group">
+                    <input
+                      type="checkbox"
+                      checked={item.status === 'completed'}
+                      onChange={() => toggleComplete(item.id)}
+                      className="item-checkbox complete-checkbox"
+                      title={item.status === 'completed' ? 'Mark incomplete' : 'Mark complete'}
+                    />
+                    <input
+                      type="checkbox"
+                      checked={selectedItems.has(item.id)}
+                      onChange={() => toggleItemSelection(item.id)}
+                      className="item-checkbox selection-checkbox"
+                      title="Select for bulk operations"
+                    />
+                  </div>
                 <div className="item-content">
                     {editingId === item.id ? (
                       <div className="item-edit">
@@ -1158,7 +1174,7 @@ Examples:
                     </div>
 
                     <div className="item-actions">
-                      {item.item_type === 'capture' &&
+                      {(item.item_type === 'capture' || item.item_type === 'task') &&
                         item.status !== 'archived' && (
                           <button
                             onClick={() => toggleComplete(item.id)}
@@ -1214,7 +1230,7 @@ Examples:
               (i) =>
                 i.status !== 'completed' &&
                 i.status !== 'archived' &&
-                i.item_type === 'capture'
+                (i.item_type === 'capture' || i.item_type === 'task')
             ).length
           }{' '}
           | Completed: {items.filter((i) => i.status === 'completed').length} |

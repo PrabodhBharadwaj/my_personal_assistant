@@ -9,6 +9,7 @@ export interface OpenAIResponse {
 export interface PlanningRequest {
   incompleteTasks: string[];
   currentDate: string;
+  currentTime: string; // Add current time for context-aware planning
   userContext?: string;
   customSystemPrompt?: string; // Add custom system prompt support
 }
@@ -28,7 +29,7 @@ export class OpenAIClient {
       // Use custom system prompt if provided, otherwise use default
       const systemPrompt =
         request.customSystemPrompt ||
-        'You are a helpful personal productivity assistant. Create actionable, structured daily plans based on incomplete tasks and user context.';
+        'You are a helpful personal productivity assistant. Your job is to create actionable, structured daily plans based on the user\'s ACTUAL logged tasks and items. CRITICAL: You MUST use and reference the specific tasks the user has logged. Do not suggest generic activities like "exercise" or "read" unless they are explicitly in the user\'s task list. Consider the current time when planning - if it\'s already afternoon, don\'t suggest morning activities. Be specific and actionable, referencing the exact tasks the user has captured. If the user has no tasks, only then suggest general productivity tips.';
 
       console.log(
         'Using system prompt:',
@@ -73,22 +74,38 @@ export class OpenAIClient {
   }
 
   private buildPlanningPrompt(request: PlanningRequest): string {
-    const { incompleteTasks, currentDate, userContext } = request;
+    const { incompleteTasks, currentDate, currentTime, userContext } = request;
 
-    let prompt = `Create a structured daily plan for ${currentDate} based on these incomplete tasks:\n\n`;
+    let prompt = `Create a structured daily plan for ${currentDate} starting from ${currentTime} based on these incomplete tasks:\n\n`;
 
     if (incompleteTasks.length === 0) {
       prompt +=
-        'No incomplete tasks found. Suggest a productive day structure with general productivity tips.';
+        'No incomplete tasks found. Since you have no specific tasks, suggest a productive day structure with general productivity tips that makes sense for the current time.';
     } else {
+      prompt += `You have ${incompleteTasks.length} incomplete tasks to work with:\n`;
       prompt += incompleteTasks
         .map((task, index) => `${index + 1}. ${task}`)
         .join('\n');
-      prompt += '\n\nOrganize these into a realistic daily schedule with:';
-      prompt += '\n- Morning priorities (most important tasks)';
-      prompt += '\n- Afternoon focus areas';
-      prompt += '\n- Evening wrap-up items';
+      
+      prompt += '\n\nIMPORTANT: Your plan MUST use and reference these specific tasks. Do not suggest generic activities.';
+      prompt += '\n\nOrganize these into a realistic daily schedule starting from the current time:';
+      
+      // Time-aware planning based on current time
+      const currentHour = parseInt(currentTime.split(':')[0]);
+      if (currentHour < 12) {
+        prompt += '\n- Morning priorities (most important tasks from your list)';
+        prompt += '\n- Afternoon focus areas (remaining tasks)';
+        prompt += '\n- Evening wrap-up items';
+      } else if (currentHour < 17) {
+        prompt += '\n- Afternoon priorities (focus on your incomplete tasks)';
+        prompt += '\n- Evening wrap-up items';
+      } else {
+        prompt += '\n- Evening focus (what you can realistically accomplish)';
+        prompt += '\n- Tomorrow preparation';
+      }
+      
       prompt += '\n- Time estimates for each section';
+      prompt += '\n- Specific task assignments to each time block';
     }
 
     if (userContext) {
@@ -96,7 +113,7 @@ export class OpenAIClient {
     }
 
     prompt +=
-      '\n\nProvide the plan in a clear, actionable format that can be easily followed.';
+      '\n\nProvide the plan in a clear, actionable format that directly references your logged tasks. Be specific about which tasks go where and when.';
 
     return prompt;
   }
