@@ -1104,6 +1104,185 @@ button:focus-visible {
   max-width: 600px;
 }
 
+/* Email Confirmation Styles */
+.email-confirmation-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.email-confirmation-icon .icon {
+  width: 3rem;
+  height: 3rem;
+  color: #3182ce;
+}
+
+.email-confirmation-content {
+  margin: 2rem 0;
+}
+
+.confirmation-steps {
+  margin-bottom: 2rem;
+}
+
+.step {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f7fafc;
+  border-radius: 8px;
+}
+
+.step-number {
+  width: 2rem;
+  height: 2rem;
+  background: #3182ce;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  margin-right: 1rem;
+  flex-shrink: 0;
+}
+
+.step-content h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.step-content p {
+  margin: 0;
+  color: #718096;
+  font-size: 0.875rem;
+}
+
+.resend-section {
+  text-align: center;
+  padding: 1.5rem;
+  background: #f7fafc;
+  border-radius: 8px;
+}
+
+.resend-text {
+  margin-bottom: 1rem;
+  color: #4a5568;
+  font-size: 0.875rem;
+}
+
+.resend-button {
+  background: #3182ce;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.resend-button:hover:not(:disabled) {
+  background: #2c5aa0;
+  transform: translateY(-1px);
+}
+
+.resend-button:disabled {
+  background: #a0aec0;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.resend-message {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
+.resend-message.success {
+  background: #c6f6d5;
+  color: #22543d;
+  border: 1px solid #9ae6b4;
+}
+
+.resend-message.error {
+  background: #fed7d7;
+  color: #742a2a;
+  border: 1px solid #feb2b2;
+}
+
+/* Auth Callback Styles */
+.callback-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.callback-icon .icon {
+  width: 3rem;
+  height: 3rem;
+}
+
+.callback-icon.loading .icon {
+  color: #3182ce;
+}
+
+.callback-icon.success .icon {
+  color: #38a169;
+}
+
+.callback-icon.error .icon {
+  color: #e53e3e;
+}
+
+.callback-icon .icon.spin {
+  animation: spin 1s linear infinite;
+}
+
+.callback-content {
+  text-align: center;
+  margin: 2rem 0;
+}
+
+.loading-animation {
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0;
+}
+
+.loading-spinner.large {
+  width: 3rem;
+  height: 3rem;
+  border: 3px solid transparent;
+  border-top: 3px solid #3182ce;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.error-actions {
+  margin-top: 2rem;
+}
+
+.confirmation-message {
+  text-align: center;
+  margin: 1.5rem 0;
+  color: #4a5568;
+  line-height: 1.6;
+}
+
+.confirmation-actions {
+  text-align: center;
+  margin-top: 2rem;
+}
+
 .welcome-header {
   margin-bottom: 2rem;
 }

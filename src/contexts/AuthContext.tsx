@@ -24,6 +24,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Get initial session
     const getSession = async () => {
+      if (!supabase) {
+        console.error('Supabase client not initialized');
+        setLoading(false);
+        return;
+      }
+
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error) {
         console.error('Error getting session:', error);
@@ -37,16 +43,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     getSession();
 
     // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.id);
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    if (supabase) {
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id);
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      });
 
-    return () => subscription.unsubscribe();
+      return () => subscription.unsubscribe();
+    }
   }, []);
 
   // Password validation function
@@ -70,17 +78,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return errors;
   };
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string): Promise<{ data: any; error: any }> => {
+    if (!supabase) {
+      return { data: null, error: { message: 'Supabase client not initialized' } };
+    }
+
     try {
       const { data, error } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
         password: password,
         options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             email: email.trim().toLowerCase(),
           }
         }
       });
+      
+      // Auto-signin after successful signup
+      if (data?.user && !error) {
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password: password,
+        });
+        
+        if (!signInError) {
+          return { data: signInData, error: null };
+        }
+      }
       
       return { data, error };
     } catch (error) {
@@ -88,7 +113,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string): Promise<{ data: any; error: any }> => {
+    if (!supabase) {
+      return { data: null, error: { message: 'Supabase client not initialized' } };
+    }
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
@@ -101,7 +130,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signOut = async () => {
+  const signOut = async (): Promise<{ error: any }> => {
+    if (!supabase) {
+      return { error: { message: 'Supabase client not initialized' } };
+    }
+
     try {
       const { error } = await supabase.auth.signOut();
       return { error };
@@ -110,7 +143,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const resetPassword = async (email: string) => {
+  const resetPassword = async (email: string): Promise<{ data: any; error: any }> => {
+    if (!supabase) {
+      return { data: null, error: { message: 'Supabase client not initialized' } };
+    }
+
     try {
       const { data, error } = await supabase.auth.resetPasswordForEmail(
         email.trim().toLowerCase(),
@@ -124,7 +161,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const updatePassword = async (password: string) => {
+  const updatePassword = async (password: string): Promise<{ data: any; error: any }> => {
+    if (!supabase) {
+      return { data: null, error: { message: 'Supabase client not initialized' } };
+    }
+
     try {
       const { data, error } = await supabase.auth.updateUser({
         password: password

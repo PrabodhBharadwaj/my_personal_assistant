@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Eye, EyeOff, Mail, Lock, CheckCircle } from 'lucide-react';
+import EmailConfirmationPage from './EmailConfirmationPage';
+import { supabase } from '../../config/supabase';
 
 interface FormData {
   email: string;
@@ -20,8 +22,9 @@ const AuthPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState('');
 
   const [formData, setFormData] = useState<FormData>({
     email: '',
@@ -32,7 +35,26 @@ const AuthPage: React.FC = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [passwordStrength, setPasswordStrength] = useState<string[]>([]);
 
-  const { signUp, signIn, resetPassword, validatePassword } = useAuth();
+  const { user, signUp, signIn, resetPassword, validatePassword } = useAuth();
+
+  const handleResendConfirmation = async () => {
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: pendingEmail,
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      return Promise.resolve();
+    } catch (error: any) {
+      return Promise.reject(error);
+    }
+  };
+
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -128,15 +150,21 @@ const AuthPage: React.FC = () => {
           }
         }
       } else {
-        const { error } = await signUp(formData.email, formData.password);
+        const { data, error } = await signUp(formData.email, formData.password);
         if (error) {
           if (error.message.includes('User already registered')) {
             setErrors({ email: 'An account with this email already exists. Try signing in instead.' });
           } else {
             setErrors({ general: error.message });
           }
+        } else if (data?.user) {
+          // User was created successfully, show email confirmation page
+          console.log('User created successfully:', data.user);
+          setPendingEmail(formData.email);
+          setShowEmailConfirmation(true);
         } else {
-          setShowWelcome(true);
+          // Handle case where signup succeeded but no user data
+          setErrors({ general: 'Account created but unable to sign you in. Please try signing in manually.' });
         }
       }
     } catch (error) {
@@ -183,8 +211,16 @@ const AuthPage: React.FC = () => {
     resetForm();
   };
 
-  if (showWelcome) {
-    return <WelcomeMessage onContinue={() => setShowWelcome(false)} />;
+
+
+  if (showEmailConfirmation) {
+    return (
+      <EmailConfirmationPage
+        email={pendingEmail}
+        onBack={() => setShowEmailConfirmation(false)}
+        onResend={handleResendConfirmation}
+      />
+    );
   }
 
   if (showForgotPassword) {

@@ -55,19 +55,8 @@ function AppContent() {
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Authentication check
-  if (loading) {
-    return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
-        <p className="loading-text">Loading your assistant...</p>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <AuthPage />;
-  }
+  // Check if user needs email confirmation
+  const [needsEmailConfirmation, setNeedsEmailConfirmation] = useState(false);
 
   // Load custom system prompt from localStorage
   const loadCustomSystemPrompt = () => {
@@ -118,7 +107,7 @@ function AppContent() {
       try {
         const parsedItems = JSON.parse(savedItems).map(
           (item: Record<string, unknown>) => ({
-            ...item,
+          ...item,
             timestamp: new Date(item.timestamp as string),
           })
         );
@@ -129,16 +118,150 @@ function AppContent() {
     }
   };
 
+  // Show welcome screen for new users (first time after signup)
+  const [showWelcome, setShowWelcome] = useState(() => {
+    // Check if this is the first time the user is accessing the app
+    if (user && user.id) {
+      const hasSeenWelcome = localStorage.getItem(`welcome-${user.id}`);
+      return !hasSeenWelcome;
+    }
+    return false;
+  });
+
   // Load items and custom prompt on component mount
   useEffect(() => {
-    loadItemsFromSupabase();
-    loadCustomSystemPrompt();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    if (user && !loading) {
+      loadItemsFromSupabase();
+      loadCustomSystemPrompt();
+      
+      // Check if user needs email confirmation
+      if (user && !user.email_confirmed_at) {
+        setNeedsEmailConfirmation(true);
+      } else {
+        setNeedsEmailConfirmation(false);
+      }
+    }
+  }, [user, loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Save items to localStorage whenever items change
   useEffect(() => {
-    localStorage.setItem('personalAssistantItems', JSON.stringify(items));
-  }, [items]);
+    if (user && !loading) {
+      localStorage.setItem('personalAssistantItems', JSON.stringify(items));
+    }
+  }, [items, user, loading]);
+
+  // Authentication check
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p className="loading-text">Loading your assistant...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthPage />;
+  }
+
+  // Check if user needs email confirmation
+  if (needsEmailConfirmation) {
+    return (
+      <div className="auth-container">
+        <div className="auth-card">
+          <div className="auth-header">
+            <div className="email-confirmation-icon">
+              <div className="icon">📧</div>
+            </div>
+            <h2 className="auth-title">Email Confirmation Required</h2>
+            <p className="auth-subtitle">
+              Please check your email and click the confirmation link to continue.
+            </p>
+          </div>
+          
+          <div className="email-confirmation-content">
+            <p className="confirmation-message">
+              We've sent a confirmation email to <strong>{user.email}</strong>. 
+              Please check your inbox and click the confirmation link to verify your account.
+            </p>
+            
+            <div className="confirmation-actions">
+              <button
+                onClick={() => window.location.reload()}
+                className="auth-button primary"
+              >
+                I've Confirmed My Email
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (showWelcome) {
+    return (
+      <div className="auth-container">
+        <div className="auth-card welcome-card">
+          <div className="welcome-header">
+            <div className="welcome-icon">✓</div>
+          </div>
+          
+          <h2 className="welcome-title">
+            Welcome to Personal Assistant!
+          </h2>
+          
+          <p className="welcome-subtitle">
+            Your account has been created successfully. Here's what you can do:
+          </p>
+          
+          <div className="welcome-features">
+            <div className="feature-item">
+              <div className="feature-icon">✓</div>
+              <div>
+                <h3 className="feature-title">Capture Anything</h3>
+                <p className="feature-description">
+                  Use voice input or text to capture thoughts, tasks, and ideas with smart hashtag organization
+                </p>
+              </div>
+            </div>
+            
+            <div className="feature-item">
+              <div className="feature-icon">✓</div>
+              <div>
+                <h3 className="feature-title">AI-Powered Planning</h3>
+                <p className="feature-description">
+                  Get intelligent daily plans with commands like "plan my day" using customizable AI behavior
+                </p>
+              </div>
+            </div>
+            
+            <div className="feature-item">
+              <div className="feature-icon">✓</div>
+              <div>
+                <h3 className="feature-title">Cross-Device Sync</h3>
+                <p className="feature-description">
+                  Access your data anywhere with real-time sync, bulk operations, and smart organization tools
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <button
+            onClick={() => {
+              localStorage.setItem(`welcome-${user.id}`, 'true');
+              setShowWelcome(false);
+            }}
+            className="auth-button primary full-width"
+          >
+            Get Started
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+
 
   const extractTags = (text: string): string[] => {
     const tagRegex = /#(\w+)/g;
@@ -276,7 +399,7 @@ function AppContent() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     // Check if this is a planning command
     const planCommands = [
       'plan my day',
@@ -301,16 +424,16 @@ function AppContent() {
       const incompleteItems = items.filter(
         (item) => item.status !== 'completed' && item.item_type === 'capture'
       );
-
-      if (incompleteItems.length === 0) {
+    
+    if (incompleteItems.length === 0) {
         addItem(
           "Great! You have a clean slate today. Consider what you'd like to accomplish.",
           'plan'
         );
-        return;
-      }
+      return;
+    }
 
-      const planText = `Daily Plan (${new Date().toLocaleDateString()}):
+    const planText = `Daily Plan (${new Date().toLocaleDateString()}):
 
 Morning:
 • ${incompleteItems
@@ -326,8 +449,8 @@ Afternoon:
 
 ${incompleteItems.length > 4 ? `\nRemaining items: ${incompleteItems.length - 4} tasks to schedule` : ''}`;
 
-      addItem(planText, 'plan');
-      setInputText('');
+    addItem(planText, 'plan');
+    setInputText('');
       return;
     }
 
@@ -635,7 +758,7 @@ ${incompleteItems.length > 4 ? `\nRemaining items: ${incompleteItems.length - 4}
         (window as Record<string, unknown>).SpeechRecognition;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const recognition = new (SpeechRecognition as any)();
-
+      
       recognition.continuous = false;
       recognition.interimResults = false;
       recognition.lang = 'en-US';
@@ -764,8 +887,8 @@ ${incompleteItems.length > 4 ? `\nRemaining items: ${incompleteItems.length - 4}
       <header className="app-header">
         <div className="header-content">
           <div className="header-text">
-            <h1>Personal Assistant</h1>
-            <p>Capture thoughts, get daily plans</p>
+        <h1>Personal Assistant</h1>
+        <p>Capture thoughts, get daily plans</p>
           </div>
           <div className="header-actions">
             <UserProfile />
@@ -886,13 +1009,13 @@ Examples:
 
       <div className="controls">
         <div className="search-controls">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search items and tags..."
-            className="search-input"
-          />
+          className="search-input"
+        />
           <select
             value={filterStatus}
             onChange={(e) =>
@@ -926,9 +1049,9 @@ Examples:
         </div>
 
         <div className="data-controls">
-          <button onClick={exportData} className="export-btn">
-            Export Data
-          </button>
+        <button onClick={exportData} className="export-btn">
+          Export Data
+        </button>
           <input
             ref={fileInputRef}
             type="file"
@@ -964,7 +1087,7 @@ Examples:
                     onChange={() => toggleItemSelection(item.id)}
                     className="item-checkbox"
                   />
-                  <div className="item-content">
+                <div className="item-content">
                     {editingId === item.id ? (
                       <div className="item-edit">
                         <input
@@ -1021,67 +1144,67 @@ Examples:
                   </div>
                 </div>
 
-                <div className="item-meta">
-                  <div className="meta-info">
-                    <span className="timestamp">
-                      {new Date(item.created_at).toLocaleString()}
-                    </span>
-                    <span className={`type-badge ${item.item_type}`}>
-                      {item.item_type}
-                    </span>
-                    {item.status === 'archived' && (
-                      <span className="archived-badge">archived</span>
-                    )}
-                  </div>
-
-                  <div className="item-actions">
-                    {item.item_type === 'capture' &&
-                      item.status !== 'archived' && (
-                        <button
-                          onClick={() => toggleComplete(item.id)}
-                          className="complete-btn"
-                          title={
-                            item.status === 'completed'
-                              ? 'Mark incomplete'
-                              : 'Mark complete'
-                          }
-                        >
-                          {item.status === 'completed' ? '↺' : '✓'}
-                        </button>
+                  <div className="item-meta">
+                    <div className="meta-info">
+                      <span className="timestamp">
+                        {new Date(item.created_at).toLocaleString()}
+                      </span>
+                      <span className={`type-badge ${item.item_type}`}>
+                        {item.item_type}
+                      </span>
+                      {item.status === 'archived' && (
+                        <span className="archived-badge">archived</span>
                       )}
-                    <button
-                      onClick={() => {
-                        setEditingId(item.id);
-                        setEditText(item.content);
-                      }}
-                      className="edit-btn"
-                      title="Edit item"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      onClick={() => archiveItem(item.id)}
-                      className="archive-btn"
-                      title={
-                        item.status === 'archived' ? 'Unarchive' : 'Archive'
-                      }
-                    >
-                      {item.status === 'archived' ? '📤' : '📦'}
-                    </button>
-                    <button
-                      onClick={() => deleteItem(item.id)}
-                      className="delete-btn"
-                      title="Delete item"
-                    >
-                      ×
-                    </button>
+                    </div>
+
+                    <div className="item-actions">
+                      {item.item_type === 'capture' &&
+                        item.status !== 'archived' && (
+                          <button
+                            onClick={() => toggleComplete(item.id)}
+                            className="complete-btn"
+                            title={
+                              item.status === 'completed'
+                                ? 'Mark incomplete'
+                                : 'Mark complete'
+                            }
+                          >
+                            {item.status === 'completed' ? '↺' : '✓'}
+                          </button>
+                        )}
+                      <button
+                        onClick={() => {
+                          setEditingId(item.id);
+                          setEditText(item.content);
+                        }}
+                        className="edit-btn"
+                        title="Edit item"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={() => archiveItem(item.id)}
+                        className="archive-btn"
+                        title={
+                          item.status === 'archived' ? 'Unarchive' : 'Archive'
+                        }
+                      >
+                        {item.status === 'archived' ? '📤' : '📦'}
+                      </button>
+                      <button
+                        onClick={() => deleteItem(item.id)}
+                        className="delete-btn"
+                        title="Delete item"
+                      >
+                        ×
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </div>
 
       <div className="stats">
         <p>
