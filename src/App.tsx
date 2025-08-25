@@ -5,6 +5,9 @@ import type { PlanningRequest } from './config/openai';
 import { config } from './config/env';
 import { supabase } from './config/supabase';
 import type { DatabaseItem } from './config/supabase';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import AuthPage from './components/Auth/AuthPage';
+import UserProfile from './components/UserProfile';
 
 interface CapturedItem {
   id: string;
@@ -29,7 +32,9 @@ interface CapturedItem {
   ai_confidence: number | null;
 }
 
-function App() {
+// Main App Content Component (wrapped with authentication)
+function AppContent() {
+  const { user, loading } = useAuth();
   const [items, setItems] = useState<CapturedItem[]>([]);
   const [inputText, setInputText] = useState('');
   const [isListening, setIsListening] = useState(false);
@@ -50,6 +55,20 @@ function App() {
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Authentication check
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p className="loading-text">Loading your assistant...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthPage />;
+  }
+
   // Load custom system prompt from localStorage
   const loadCustomSystemPrompt = () => {
     const savedPrompt = localStorage.getItem('customSystemPrompt');
@@ -68,11 +87,12 @@ function App() {
 
   // Load items from Supabase or localStorage
   const loadItemsFromSupabase = async () => {
-    if (config.enableSupabase && supabase) {
+    if (config.enableSupabase && supabase && user) {
       try {
         const { data, error } = await supabase
           .from('items')
           .select('*')
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
         if (error) {
@@ -149,11 +169,18 @@ function App() {
       };
 
       try {
-        if (config.enableSupabase && supabase) {
-          // Save to Supabase
+        if (config.enableSupabase && supabase && user) {
+          // Save to Supabase with user authentication
+          const itemWithUser = {
+            ...newItem,
+            user_id: user.id,
+            created_by: user.id,
+            updated_by: user.id,
+          };
+          
           const { data, error } = await supabase
             .from('items')
-            .insert(newItem)
+            .insert(itemWithUser)
             .select()
             .single();
 
@@ -367,54 +394,161 @@ ${incompleteItems.length > 4 ? `\nRemaining items: ${incompleteItems.length - 4}
     }
   };
 
-  const toggleComplete = (id: string) => {
+  const toggleComplete = async (id: string) => {
+    const newStatus = items.find(item => item.id === id)?.status === 'completed' ? 'active' : 'completed';
+    
+    // Update local state immediately for responsive UI
     setItems((prev) =>
       prev.map((item) =>
         item.id === id
           ? {
               ...item,
-              status: item.status === 'completed' ? 'active' : 'completed',
+              status: newStatus,
             }
           : item
       )
     );
+
+    // Sync with Supabase if available
+    if (config.enableSupabase && supabase && user) {
+      try {
+        const { error } = await supabase
+          .from('items')
+          .update({ 
+            status: newStatus,
+            updated_by: user.id,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', id)
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error updating item in Supabase:', error);
+          // Revert local state on error
+          setItems((prev) =>
+            prev.map((item) =>
+              item.id === id
+                ? {
+                    ...item,
+                    status: newStatus === 'completed' ? 'active' : 'completed',
+                  }
+                : item
+            )
+          );
+        }
+      } catch (error) {
+        console.error('Error syncing with Supabase:', error);
+      }
+    }
   };
 
-  const deleteItem = (id: string) => {
+  const deleteItem = async (id: string) => {
+    // Remove from local state immediately for responsive UI
     setItems((prev) => prev.filter((item) => item.id !== id));
     setSelectedItems((prev) => {
       const newSelected = new Set(prev);
       newSelected.delete(id);
       return newSelected;
     });
+
+    // Sync with Supabase if available
+    if (config.enableSupabase && supabase && user) {
+      try {
+        const { error } = await supabase
+          .from('items')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error deleting item from Supabase:', error);
+          // Could add error handling UI here
+        }
+      } catch (error) {
+        console.error('Error syncing with Supabase:', error);
+      }
+    }
   };
 
-  const editItem = (id: string, newText: string) => {
+  const editItem = async (id: string, newText: string) => {
     if (newText.trim()) {
       const tags = extractTags(newText);
+      const updatedItem = { 
+        content: newText.trim(), 
+        context_tags: tags,
+        updated_at: new Date().toISOString()
+      };
+      
+      // Update local state immediately for responsive UI
       setItems((prev) =>
         prev.map((item) =>
           item.id === id
-            ? { ...item, content: newText.trim(), context_tags: tags }
+            ? { ...item, ...updatedItem }
             : item
         )
       );
+
+      // Sync with Supabase if available
+      if (config.enableSupabase && supabase && user) {
+        try {
+          const { error } = await supabase
+            .from('items')
+            .update({ 
+              ...updatedItem,
+              updated_by: user.id
+            })
+            .eq('id', id)
+            .eq('user_id', user.id);
+
+          if (error) {
+            console.error('Error updating item in Supabase:', error);
+            // Could add error handling UI here
+          }
+        } catch (error) {
+          console.error('Error syncing with Supabase:', error);
+        }
+      }
     }
     setEditingId(null);
     setEditText('');
   };
 
-  const archiveItem = (id: string) => {
+  const archiveItem = async (id: string) => {
+    const newStatus = items.find(item => item.id === id)?.status === 'archived' ? 'active' : 'archived';
+    
+    // Update local state immediately for responsive UI
     setItems((prev) =>
       prev.map((item) =>
         item.id === id
           ? {
               ...item,
-              status: item.status === 'archived' ? 'active' : 'archived',
+              status: newStatus,
             }
           : item
       )
     );
+
+    // Sync with Supabase if available
+    if (config.enableSupabase && supabase && user) {
+      try {
+        const { error } = await supabase
+          .from('items')
+          .update({ 
+            status: newStatus,
+            updated_by: user.id,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', id)
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error updating item in Supabase:', error);
+          // Could add error handling UI here
+        }
+      } catch (error) {
+        console.error('Error syncing with Supabase:', error);
+      }
+    }
   };
 
   const toggleItemSelection = (id: string) => {
@@ -429,26 +563,68 @@ ${incompleteItems.length > 4 ? `\nRemaining items: ${incompleteItems.length - 4}
     });
   };
 
-  const bulkDeleteSelected = () => {
+  const bulkDeleteSelected = async () => {
     const selectedIds = Array.from(selectedItems);
     if (
       selectedIds.length > 0 &&
       window.confirm(`Delete ${selectedIds.length} selected items?`)
     ) {
+      // Update local state immediately for responsive UI
       setItems((prev) => prev.filter((item) => !selectedItems.has(item.id)));
       setSelectedItems(new Set());
+
+      // Sync with Supabase if available
+      if (config.enableSupabase && supabase && user) {
+        try {
+          const { error } = await supabase
+            .from('items')
+            .delete()
+            .in('id', selectedIds)
+            .eq('user_id', user.id);
+
+          if (error) {
+            console.error('Error bulk deleting items from Supabase:', error);
+            // Could add error handling UI here
+          }
+        } catch (error) {
+          console.error('Error syncing with Supabase:', error);
+        }
+      }
     }
   };
 
-  const bulkArchiveSelected = () => {
+  const bulkArchiveSelected = async () => {
     const selectedIds = Array.from(selectedItems);
     if (selectedIds.length > 0) {
+      // Update local state immediately for responsive UI
       setItems((prev) =>
         prev.map((item) =>
           selectedItems.has(item.id) ? { ...item, status: 'archived' } : item
         )
       );
       setSelectedItems(new Set());
+
+      // Sync with Supabase if available
+      if (config.enableSupabase && supabase && user) {
+        try {
+          const { error } = await supabase
+            .from('items')
+            .update({ 
+              status: 'archived',
+              updated_by: user.id,
+              updated_at: new Date().toISOString()
+            })
+            .in('id', selectedIds)
+            .eq('user_id', user.id);
+
+          if (error) {
+            console.error('Error bulk archiving items in Supabase:', error);
+            // Could add error handling UI here
+          }
+        } catch (error) {
+          console.error('Error syncing with Supabase:', error);
+        }
+      }
     }
   };
 
@@ -586,8 +762,15 @@ ${incompleteItems.length > 4 ? `\nRemaining items: ${incompleteItems.length - 4}
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Personal Assistant</h1>
-        <p>Capture thoughts, get daily plans</p>
+        <div className="header-content">
+          <div className="header-text">
+            <h1>Personal Assistant</h1>
+            <p>Capture thoughts, get daily plans</p>
+          </div>
+          <div className="header-actions">
+            <UserProfile />
+          </div>
+        </div>
       </header>
 
       {/* Custom System Prompt Section */}
@@ -917,6 +1100,15 @@ Examples:
         </p>
       </div>
     </div>
+  );
+}
+
+// Main App Component with Authentication Provider
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
