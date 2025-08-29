@@ -1,7 +1,7 @@
 // Health check endpoint for Vercel API
 // Handles /api/health requests
 
-export default async function handler(req, res) {
+const handler = async (req, res) => {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || 'http://localhost:5173');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -42,4 +42,6 @@ export default async function handler(req, res) {
       timestamp: new Date().toISOString()
     });
   }
-}
+};
+
+export default handler;

@@ -14,7 +14,8 @@
     "dotenv": "16.6.1",
     "lucide-react": "0.541.0",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "vercel": "46.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
