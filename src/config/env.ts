@@ -2,11 +2,9 @@
 // This file loads environment variables and provides them to the application
 
 export const config = {
-  // API configuration
-  apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:3000',
-  apiKey: import.meta.env.VITE_API_KEY || '',
-  openaiApiKey: import.meta.env.VITE_OPENAI_API_KEY || '',
-
+  // Backend API configuration
+  backendUrl: import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001',
+  
   // Supabase configuration
   supabaseUrl: import.meta.env.VITE_SUPABASE_URL || '',
   supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || '',
@@ -17,7 +15,7 @@ export const config = {
 
   // Feature flags
   enableDebug: import.meta.env.VITE_ENABLE_DEBUG === 'true',
-  enableAI: !!import.meta.env.VITE_OPENAI_API_KEY,
+  enableAI: true, // Always enabled since backend handles OpenAI
   enableSupabase: !!(
     import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY
   ),

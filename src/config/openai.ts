@@ -1,133 +1,70 @@
-export interface OpenAIResponse {
-  choices: Array<{
-    message: {
-      content: string;
-    };
-  }>;
-}
+import { config } from './env';
 
 export interface PlanningRequest {
   incompleteTasks: string[];
   currentDate: string;
-  currentTime: string; // Add current time for context-aware planning
+  currentTime: string;
   userContext?: string;
-  customSystemPrompt?: string; // Add custom system prompt support
+  customSystemPrompt?: string;
+}
+
+export interface PlanningResponse {
+  success: boolean;
+  plan?: string;
+  error?: string;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
 }
 
 export class OpenAIClient {
-  private apiKey: string;
-  private baseURL: string = 'https://api.openai.com/v1';
+  private backendUrl: string;
 
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
+  constructor() {
+    this.backendUrl = config.backendUrl;
   }
 
   async generateDailyPlan(request: PlanningRequest): Promise<string> {
     try {
-      const prompt = this.buildPlanningPrompt(request);
-
-      // Use custom system prompt if provided, otherwise use default
-      const systemPrompt =
-        request.customSystemPrompt ||
-        'You are a helpful personal productivity assistant. Your job is to create actionable, structured daily plans based on the user\'s ACTUAL logged tasks and items. CRITICAL: You MUST use and reference the specific tasks the user has logged. Do not suggest generic activities like "exercise" or "read" unless they are explicitly in the user\'s task list. Consider the current time when planning - if it\'s already afternoon, don\'t suggest morning activities. Be specific and actionable, referencing the exact tasks the user has captured. If the user has no tasks, only then suggest general productivity tips.';
-
-      console.log(
-        'Using system prompt:',
-        systemPrompt.substring(0, 100) + '...'
-      );
-
-      const response = await fetch(`${this.baseURL}/chat/completions`, {
+      const response = await fetch(`${this.backendUrl}/api/openai/plan`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini', // Using cheaper model for cost control
-          messages: [
-            {
-              role: 'system',
-              content: systemPrompt, // Use custom or default system prompt
-            },
-            {
-              role: 'user',
-              content: prompt,
-            },
-          ],
-          max_tokens: 500,
-          temperature: 0.7,
-        }),
+        body: JSON.stringify(request),
       });
 
       if (!response.ok) {
-        throw new Error(
-          `OpenAI API error: ${response.status} ${response.statusText}`
-        );
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data: OpenAIResponse = await response.json();
-      return data.choices[0]?.message?.content || 'Unable to generate plan';
-    } catch (error) {
-      console.error('OpenAI API error:', error);
-      throw error;
-    }
-  }
-
-  private buildPlanningPrompt(request: PlanningRequest): string {
-    const { incompleteTasks, currentDate, currentTime, userContext } = request;
-
-    let prompt = `Create a structured daily plan for ${currentDate} starting from ${currentTime} based on these incomplete tasks:\n\n`;
-
-    if (incompleteTasks.length === 0) {
-      prompt +=
-        'No incomplete tasks found. Since you have no specific tasks, suggest a productive day structure with general productivity tips that makes sense for the current time.';
-    } else {
-      prompt += `You have ${incompleteTasks.length} incomplete tasks to work with:\n`;
-      prompt += incompleteTasks
-        .map((task, index) => `${index + 1}. ${task}`)
-        .join('\n');
+      const result: PlanningResponse = await response.json();
       
-      prompt += '\n\nIMPORTANT: Your plan MUST use and reference these specific tasks. Do not suggest generic activities.';
-      prompt += '\n\nOrganize these into a realistic daily schedule starting from the current time:';
-      
-      // Time-aware planning based on current time
-      const currentHour = parseInt(currentTime.split(':')[0]);
-      if (currentHour < 12) {
-        prompt += '\n- Morning priorities (most important tasks from your list)';
-        prompt += '\n- Afternoon focus areas (remaining tasks)';
-        prompt += '\n- Evening wrap-up items';
-      } else if (currentHour < 17) {
-        prompt += '\n- Afternoon priorities (focus on your incomplete tasks)';
-        prompt += '\n- Evening wrap-up items';
+      if (result.success && result.plan) {
+        // Log usage information if available
+        if (result.usage) {
+          console.log('OpenAI API usage:', result.usage);
+        }
+        return result.plan;
       } else {
-        prompt += '\n- Evening focus (what you can realistically accomplish)';
-        prompt += '\n- Tomorrow preparation';
+        throw new Error(result.error || 'Backend returned error');
+      }
+    } catch (error) {
+      console.error('Backend API error:', error);
+      
+      if (error instanceof Error) {
+        throw new Error(`Backend error: ${error.message}`);
       }
       
-      prompt += '\n- Time estimates for each section';
-      prompt += '\n- Specific task assignments to each time block';
+      throw new Error('Unknown error occurred while calling backend');
     }
-
-    if (userContext) {
-      prompt += `\n\nAdditional context: ${userContext}`;
-    }
-
-    prompt +=
-      '\n\nProvide the plan in a clear, actionable format that directly references your logged tasks. Be specific about which tasks go where and when.';
-
-    return prompt;
   }
 }
 
 export function createOpenAIClient(): OpenAIClient | null {
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-
-  if (!apiKey) {
-    console.warn(
-      'OpenAI API key not found. Please set VITE_OPENAI_API_KEY in your .env file.'
-    );
-    return null;
-  }
-
-  return new OpenAIClient(apiKey);
+  // Always return client since backend handles OpenAI
+  return new OpenAIClient();
 }
