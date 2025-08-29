@@ -18,6 +18,7 @@ A comprehensive, AI-powered personal productivity assistant built with React, Ty
 
 ### **🏗️ Advanced Architecture**
 - **Real-time Database**: Supabase PostgreSQL with live updates
+- **Secure Backend**: Vercel serverless functions for AI operations
 - **Scalable Schema**: Production-ready database design
 - **Performance Optimized**: Full-text search and semantic indexing
 - **Type Safety**: Full TypeScript integration
@@ -33,35 +34,46 @@ A comprehensive, AI-powered personal productivity assistant built with React, Ty
 ### **Prerequisites**
 - Node.js 18+ and npm
 - Supabase account
-- OpenAI API key (optional, for AI features)
+- OpenAI API key (configured in backend)
 
 ### **1. Clone & Install**
 ```bash
 git clone https://github.com/PrabodhBharadwaj/my_personal_assistant.git
 cd my_personal_assistant
 npm install
+cd backend && npm install
 ```
 
 ### **2. Environment Setup**
 Create `.env` file in project root:
 ```bash
+# Frontend Environment Variables
+VITE_BACKEND_URL=https://your-backend-url.vercel.app
+
 # Supabase Configuration (Required)
 VITE_SUPABASE_URL=https://your-project-id.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-
-# OpenAI Configuration (Optional, for AI features)
-VITE_OPENAI_API_KEY=sk-your-openai-key-here
 
 # App Configuration (Optional)
 VITE_APP_NAME=My Personal Assistant
 VITE_ENABLE_DEBUG=true
 ```
 
-### **3. Database Setup**
+**Note**: OpenAI API key is configured securely in the backend and never exposed to the frontend.
+
+### **3. Backend Setup**
+Follow the **backend/README.md** and **backend/VERCEL_DEPLOYMENT.md** to deploy your backend to Vercel.
+
+### **4. Database Setup**
 Follow the **SUPABASE_SETUP_GUIDE.md** to set up your database schema.
 
-### **4. Start Development**
+### **5. Start Development**
 ```bash
+# Terminal 1: Start frontend
+npm run dev
+
+# Terminal 2: Start backend (for local development)
+cd backend
 npm run dev
 ```
 Open [http://localhost:5173](http://localhost:5173)
@@ -78,7 +90,13 @@ Visit the live application: [https://prabodhbharadwaj.github.io/my_personal_assi
 - **Tailwind CSS** for styling
 - **ESLint + Prettier** for code quality
 
-### **Backend**
+### **Backend (Vercel Serverless)**
+- **Vercel Functions**: Serverless API endpoints
+- **OpenAI Integration**: Secure server-side AI operations
+- **Rate Limiting**: API abuse prevention
+- **CORS Management**: Secure cross-origin requests
+
+### **Database**
 - **Supabase** PostgreSQL database
 - **Real-time subscriptions** for live updates
 - **Row Level Security** for data protection
@@ -86,6 +104,7 @@ Visit the live application: [https://prabodhbharadwaj.github.io/my_personal_assi
 
 ### **AI Integration**
 - **OpenAI GPT-4o-mini** for planning
+- **Secure Backend**: API keys never exposed to client
 - **Cost-optimized** API usage
 - **Fallback planning** when AI unavailable
 - **Context-aware** recommendations
@@ -114,25 +133,44 @@ Visit the live application: [https://prabodhbharadwaj.github.io/my_personal_assi
 
 ### **Available Scripts**
 ```bash
+# Frontend
 npm run dev          # Start development server
 npm run build        # Build for production
 npm run preview      # Preview production build
 npm run lint         # Run ESLint
 npm run lint --fix   # Fix linting issues
+
+# Backend
+cd backend
+npm run dev          # Start backend server
+npm run build:local  # Build TypeScript
+npm start            # Start production build
 ```
 
 ### **Project Structure**
 ```
-src/
-├── config/          # Configuration files
-│   ├── env.ts      # Environment variables
-│   ├── openai.ts   # OpenAI client
-│   └── supabase.ts # Supabase client
-├── utils/           # Utility functions
-│   └── supabase-test.ts
-├── components/      # React components
-├── App.tsx         # Main application
-└── main.tsx        # Entry point
+my_personal_assistant/
+├── src/                    # Frontend React application
+│   ├── config/            # Configuration files
+│   │   ├── env.ts        # Environment variables
+│   │   ├── openai.ts     # OpenAI client (frontend)
+│   │   └── supabase.ts   # Supabase client
+│   ├── utils/             # Utility functions
+│   ├── components/        # React components
+│   ├── App.tsx           # Main application
+│   └── main.tsx          # Entry point
+├── backend/               # Backend serverless functions
+│   ├── api/              # Vercel API routes
+│   │   ├── health.js     # Health check endpoint
+│   │   ├── index.js      # Main API handler
+│   │   ├── _utils.js     # Shared utilities
+│   │   └── openai/
+│   │       └── plan.js   # AI planning endpoint
+│   ├── src/              # TypeScript source (local dev)
+│   ├── vercel.json       # Vercel configuration
+│   └── package.json      # Backend dependencies
+├── supabase/             # Database migrations
+└── package.json          # Frontend dependencies
 ```
 
 ### **Code Quality**
@@ -155,7 +193,7 @@ addItem("Review design system updates #work #priority", "task");
 ### **AI Planning**
 ```typescript
 // Generate daily plan
-handleDailyPlanning(); // Triggers AI planning
+handleDailyPlanning(); // Triggers AI planning via backend
 
 // Custom planning prompts
 "Plan my day with focus on creative work"
@@ -195,10 +233,16 @@ const { data: tasks } = await supabase
 - Restart development server
 
 #### **AI Planning Not Working**
-- Check OpenAI API key is set
-- Verify API key has sufficient credits
-- Check browser console for errors
-- Test with fallback planning
+- Check backend is deployed and accessible
+- Verify `VITE_BACKEND_URL` is set correctly
+- Check browser console for CORS errors
+- Test backend health endpoint
+
+#### **Backend API Errors**
+- Check Vercel deployment status
+- Verify environment variables in Vercel
+- Check API logs in Vercel dashboard
+- Test endpoints with Postman/curl
 
 #### **Database Errors**
 - Run schema verification queries
@@ -215,14 +259,19 @@ await testSupabaseConnection();
 // Check environment config
 import { config } from './config/env';
 console.log('Config:', config);
+
+// Test backend connection
+fetch(`${config.backendUrl}/api/health`)
+  .then(res => res.json())
+  .then(data => console.log('Backend health:', data));
 ```
 
 ## 📈 **Performance & Scaling**
 
 ### **Free Tier Limits**
 - **Supabase**: 500MB database, 50K API requests/month
+- **Vercel**: 100GB bandwidth, 100 serverless function executions/day
 - **OpenAI**: Pay-per-use (~$2-5/month for personal use)
-- **Vercel/Netlify**: Free hosting for frontend
 
 ### **Optimization Tips**
 - Use database indexes effectively
@@ -237,6 +286,7 @@ console.log('Config:', config);
 - [x] AI-powered daily planning
 - [x] Supabase database integration
 - [x] Basic task management
+- [x] Secure backend deployment
 
 ### **Phase 2: Enhanced Features** 🚧
 - [ ] Real-time collaboration
@@ -265,6 +315,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 🙏 **Acknowledgments**
 
 - **Supabase** for the amazing backend platform
+- **Vercel** for serverless function hosting
 - **OpenAI** for AI capabilities
 - **Vite** for the fast build tool
 - **React** team for the excellent framework
@@ -278,3 +329,4 @@ Your personal AI assistant is ready to help you capture, organize, and act on li
 ---
 
 > **📢 Repository Status**: This repository is now public to enable GitHub Pages deployment.
+> **🔒 Security**: OpenAI API keys are securely stored in the backend and never exposed to the client.
