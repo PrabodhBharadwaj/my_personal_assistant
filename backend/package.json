@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Secure backend proxy for Personal Assistant OpenAI API calls",
   "main": "dist/server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
@@ -17,6 +20,8 @@
     "logs": "./scripts/process-manager.sh logs",
     "logs:tail": "./scripts/process-manager.sh logs:tail",
     "logs:clear": "./scripts/process-manager.sh clear-logs",
+    "vercel-build": "npm run build",
+    "vercel-dev": "npm run dev",
     "test": "jest"
   },
   "dependencies": {
