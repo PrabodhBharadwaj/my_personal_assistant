@@ -1,48 +1,40 @@
-// Vercel API route handler for the main endpoint
-// This file serves as the main API entry point for Vercel
+// Main API handler for Vercel API routes
+// This handles /api/* routes and provides health check
+
+const { setCorsHeaders, handleCorsPreflight, successResponse, errorResponse } = require('./_utils');
 
 module.exports = async (req, res) => {
   // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || 'http://localhost:5173');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  setCorsHeaders(res);
 
   // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
+  if (handleCorsPreflight(req, res)) {
     return;
   }
 
   // Health check endpoint
   if (req.url === '/api/health' || req.url === '/health') {
-    return res.json({
-      success: true,
+    return successResponse(res, {
       message: 'Personal Assistant Backend is running',
-      timestamp: new Date().toISOString(),
       version: '1.0.0',
       environment: process.env.NODE_ENV || 'development',
       port: 'vercel',
       corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
-    });
+    }, 'Health check successful');
   }
 
-  // Root endpoint
+  // Root API endpoint
   if (req.url === '/' || req.url === '/api') {
-    return res.json({
+    return successResponse(res, {
       message: 'Personal Assistant Backend API',
       version: '1.0.0',
       endpoints: {
         health: '/api/health',
         planning: '/api/openai/plan',
       },
-    });
+    }, 'API information');
   }
 
-  // 404 handler for unmatched routes
-  res.status(404).json({
-    success: false,
-    error: 'Endpoint not found',
-    path: req.url,
-  });
+  // 404 handler for unmatched API routes
+  return errorResponse(res, 404, 'API endpoint not found', { path: req.url });
 };

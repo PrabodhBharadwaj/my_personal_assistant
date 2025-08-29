@@ -2,6 +2,7 @@
 // This handles the /api/openai/plan endpoint
 
 const OpenAI = require('openai');
+const { setCorsHeaders, handleCorsPreflight, errorResponse, successResponse, validateRequiredFields, checkRateLimit } = require('../_utils');
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -16,30 +17,36 @@ if (!process.env.OPENAI_API_KEY || !process.env.OPENAI_API_KEY.startsWith('sk-')
 }
 
 module.exports = async (req, res) => {
+  // Set CORS headers
+  setCorsHeaders(res);
+
+  // Handle preflight requests
+  if (handleCorsPreflight(req, res)) {
+    return;
+  }
+
   // Only allow POST requests
   if (req.method !== 'POST') {
-    return res.status(405).json({
-      success: false,
-      error: 'Method not allowed. Use POST.',
-    });
+    return errorResponse(res, 405, 'Method not allowed. Use POST.');
   }
 
   try {
+    // Check rate limiting
+    const clientIP = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || 'unknown';
+    if (!checkRateLimit(clientIP)) {
+      return errorResponse(res, 429, 'Too many requests. Please try again later.');
+    }
+
     const { incompleteTasks, currentDate, currentTime, userContext, customSystemPrompt } = req.body;
 
     // Validate required fields
-    if (!incompleteTasks || !Array.isArray(incompleteTasks)) {
-      return res.status(400).json({
-        success: false,
-        error: 'incompleteTasks must be an array',
-      });
+    const missingFields = validateRequiredFields(req.body, ['incompleteTasks', 'currentDate', 'currentTime']);
+    if (missingFields.length > 0) {
+      return errorResponse(res, 400, 'Missing required fields', { missingFields });
     }
 
-    if (!currentDate || !currentTime) {
-      return res.status(400).json({
-        success: false,
-        error: 'currentDate and currentTime are required',
-      });
+    if (!Array.isArray(incompleteTasks)) {
+      return errorResponse(res, 400, 'incompleteTasks must be an array');
     }
 
     // Build system prompt
@@ -84,24 +91,22 @@ Format the response as a clear, actionable plan.`;
     }
 
     // Return success response
-    res.json({
-      success: true,
+    return successResponse(res, {
       plan,
       usage: {
         prompt_tokens: completion.usage?.prompt_tokens || 0,
         completion_tokens: completion.usage?.completion_tokens || 0,
         total_tokens: completion.usage?.total_tokens || 0,
       },
-    });
+    }, 'Plan generated successfully');
 
   } catch (error) {
     console.error('OpenAI API error:', error);
     
-    res.status(500).json({
-      success: false,
-      error: process.env.NODE_ENV === 'production' 
+    return errorResponse(res, 500, 
+      process.env.NODE_ENV === 'production' 
         ? 'Internal server error' 
-        : error.message,
-    });
+        : error.message
+    );
   }
 };

@@ -1,33 +1,11 @@
 {
   "version": 2,
-  "buildCommand": "echo 'No build needed for serverless functions'",
   "functions": {
-    "index.js": {
+    "api/index.js": {
       "maxDuration": 30
     },
     "api/openai/plan.js": {
       "maxDuration": 30
     }
-  },
-  "routes": [
-    {
-      "src": "/api/health",
-      "dest": "/index.js"
-    },
-    {
-      "src": "/api/openai/plan",
-      "dest": "/api/openai/plan.js"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/index.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.js"
-    }
-  ],
-  "env": {
-    "NODE_ENV": "production"
   }
 }
