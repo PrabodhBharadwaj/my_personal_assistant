@@ -1,22 +1,48 @@
-// Entry point for Vercel deployment
-// This file serves as a bridge to the TypeScript server
+// Main entry point for Vercel backend deployment
+// This file serves as the root handler for all requests
 
-const { spawn } = require('child_process');
-const path = require('path');
+module.exports = async (req, res) => {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || 'http://localhost:5173');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
 
-// Check if we're in development or production
-if (process.env.NODE_ENV === 'production') {
-  // In production, run the built JavaScript
-  require('./dist/server.js');
-} else {
-  // In development, run TypeScript directly
-  const tsNode = spawn('npx', ['ts-node', 'src/server.ts'], {
-    stdio: 'inherit',
-    shell: true
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  // Health check endpoint
+  if (req.url === '/api/health' || req.url === '/health') {
+    return res.json({
+      success: true,
+      message: 'Personal Assistant Backend is running',
+      timestamp: new Date().toISOString(),
+      version: '1.0.0',
+      environment: process.env.NODE_ENV || 'development',
+      port: 'vercel',
+      corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    });
+  }
+
+  // Root endpoint
+  if (req.url === '/' || req.url === '/api') {
+    return res.json({
+      message: 'Personal Assistant Backend API',
+      version: '1.0.0',
+      endpoints: {
+        health: '/api/health',
+        planning: '/api/openai/plan',
+      },
+    });
+  }
+
+  // 404 handler for unmatched routes
+  res.status(404).json({
+    success: false,
+    error: 'Endpoint not found',
+    path: req.url,
   });
-  
-  tsNode.on('error', (error) => {
-    console.error('Failed to start development server:', error);
-    process.exit(1);
-  });
-}
+};
