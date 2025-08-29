@@ -1,7 +1,8 @@
 // Shared utilities for Vercel API functions
+// Note: Since we're using ES6 modules, imports must use import syntax
 
 // CORS configuration
-const corsHeaders = {
+export const corsHeaders = {
   'Access-Control-Allow-Origin': process.env.CORS_ORIGIN || 'http://localhost:5173',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
@@ -9,14 +10,14 @@ const corsHeaders = {
 };
 
 // Set CORS headers on response
-function setCorsHeaders(res) {
+export function setCorsHeaders(res) {
   Object.entries(corsHeaders).forEach(([key, value]) => {
     res.setHeader(key, value);
   });
 }
 
 // Handle CORS preflight requests
-function handleCorsPreflight(req, res) {
+export function handleCorsPreflight(req, res) {
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return true; // Indicates preflight was handled
@@ -25,7 +26,7 @@ function handleCorsPreflight(req, res) {
 }
 
 // Standard error response
-function errorResponse(res, statusCode, message, details = null) {
+export function errorResponse(res, statusCode, message, details = null) {
   const response = {
     success: false,
     error: message,
@@ -40,7 +41,7 @@ function errorResponse(res, statusCode, message, details = null) {
 }
 
 // Success response wrapper
-function successResponse(res, data, message = 'Success') {
+export function successResponse(res, data, message = 'Success') {
   res.json({
     success: true,
     message,
@@ -50,7 +51,7 @@ function successResponse(res, data, message = 'Success') {
 }
 
 // Validate required fields in request body
-function validateRequiredFields(body, requiredFields) {
+export function validateRequiredFields(body, requiredFields) {
   const missing = [];
   
   requiredFields.forEach(field => {
@@ -62,12 +63,12 @@ function validateRequiredFields(body, requiredFields) {
   return missing;
 }
 
-// Rate limiting helper (simple in-memory for demo)
+// Rate limiting helper (simple in-memory)
 const requestCounts = new Map();
 const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
 const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100;
 
-function checkRateLimit(ip) {
+export function checkRateLimit(ip) {
   const now = Date.now();
   const userRequests = requestCounts.get(ip) || [];
   
@@ -85,12 +86,11 @@ function checkRateLimit(ip) {
   return true; // Not rate limited
 }
 
-module.exports = {
-  setCorsHeaders,
-  handleCorsPreflight,
-  errorResponse,
-  successResponse,
-  validateRequiredFields,
-  checkRateLimit,
-  corsHeaders
-};
+// Get client IP address
+export function getClientIP(req) {
+  return req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+         req.headers['x-real-ip'] ||
+         req.connection?.remoteAddress ||
+         req.socket?.remoteAddress ||
+         'unknown';
+}
