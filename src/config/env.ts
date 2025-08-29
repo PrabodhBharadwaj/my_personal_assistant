@@ -24,6 +24,18 @@ export const config = {
 // Log configuration in development mode
 if (import.meta.env.DEV) {
   console.log('Environment Configuration:', config);
+  console.log('🌐 Backend URL:', config.backendUrl);
+  console.log('🔧 Environment:', config.environment);
+
+  // Test backend connection if available
+  if (config.backendUrl && config.backendUrl !== 'http://localhost:3001') {
+    console.log('🧪 Testing backend connection...');
+    import('../utils/api').then(({ checkBackendHealth }) => {
+      checkBackendHealth()
+        .then(() => console.log('✅ Backend connection successful'))
+        .catch(() => console.log('⚠️ Backend connection failed - check URL'));
+    });
+  }
 
   // Test Supabase connection if enabled
   if (config.enableSupabase) {

@@ -1,4 +1,4 @@
-import { config } from './env';
+import { generateDailyPlan as apiGenerateDailyPlan } from '../utils/api';
 
 export interface PlanningRequest {
   incompleteTasks: string[];
@@ -20,28 +20,9 @@ export interface PlanningResponse {
 }
 
 export class OpenAIClient {
-  private backendUrl: string;
-
-  constructor() {
-    this.backendUrl = config.backendUrl;
-  }
-
   async generateDailyPlan(request: PlanningRequest): Promise<string> {
     try {
-      const response = await fetch(`${this.backendUrl}/api/openai/plan`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(request),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result: PlanningResponse = await response.json();
+      const result: PlanningResponse = await apiGenerateDailyPlan(request);
       
       if (result.success && result.plan) {
         // Log usage information if available
