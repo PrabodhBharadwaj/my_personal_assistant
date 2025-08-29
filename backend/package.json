@@ -7,7 +7,7 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "build": "tsc",
+    "build:local": "tsc",
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only -r dotenv/config src/server.ts",
     "dev:debug": "ts-node-dev --respawn --transpile-only -r dotenv/config src/server.ts dotenv_config_path=.env.server --inspect",
