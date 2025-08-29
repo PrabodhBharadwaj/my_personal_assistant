@@ -20,7 +20,7 @@
     "logs": "./scripts/process-manager.sh logs",
     "logs:tail": "./scripts/process-manager.sh logs:tail",
     "logs:clear": "./scripts/process-manager.sh clear-logs",
-    "vercel-build": "npm run build",
+    "vercel-build": "echo 'No build needed for Vercel serverless functions'",
     "vercel-dev": "npm run dev",
     "test": "jest"
   },
