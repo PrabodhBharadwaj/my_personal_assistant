@@ -2,7 +2,8 @@
 // This file provides a consistent way to make API calls to the backend
 
 // Use relative URLs for Vercel API routes (same domain)
-const API_BASE = import.meta.env.VITE_BACKEND_URL || '';
+// Override any VITE_BACKEND_URL environment variable to force relative URLs
+const API_BASE = '';
 
 // API endpoint paths
 export const API_ENDPOINTS = {

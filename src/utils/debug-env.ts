@@ -9,8 +9,9 @@ export function debugEnvironmentVariables() {
   console.log('PROD:', import.meta.env.PROD);
   
   // Test API_BASE resolution
-  const API_BASE = import.meta.env.VITE_BACKEND_URL || '';
+  const API_BASE = ''; // Force relative URLs, ignore VITE_BACKEND_URL
   console.log('API_BASE resolved to:', API_BASE || '(relative URLs - same domain)');
+  console.log('VITE_BACKEND_URL (ignored):', import.meta.env.VITE_BACKEND_URL);
   
   // Test if we can make a simple fetch
   console.log('🧪 Testing API_BASE URL...');

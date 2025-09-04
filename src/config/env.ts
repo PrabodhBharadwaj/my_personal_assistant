@@ -4,7 +4,8 @@
 export const config = {
   // Backend API configuration
   // Use relative URLs for Vercel API routes (same domain)
-  backendUrl: import.meta.env.VITE_BACKEND_URL || '',
+  // Override any VITE_BACKEND_URL environment variable to force relative URLs
+  backendUrl: '',
   
   // Supabase configuration
   supabaseUrl: import.meta.env.VITE_SUPABASE_URL || '',
