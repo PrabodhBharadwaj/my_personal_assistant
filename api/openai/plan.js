@@ -62,21 +62,38 @@ export default async function handler(req, res) {
       openAIKeyLength: process.env.OPENAI_API_KEY?.length || 0,
       allEnvKeys: Object.keys(process.env).filter(key => key.includes('OPENAI') || key.includes('API'))
     });
+
+    // Debug logging for custom prompt and time context
+    console.log('⏰ Time context:', { currentDate, currentTime });
+    console.log('🎯 Custom prompt provided:', !!customSystemPrompt);
+    if (customSystemPrompt) {
+      console.log('📝 Custom prompt preview:', customSystemPrompt.substring(0, 100) + '...');
+    }
+    console.log('📋 Tasks to plan:', incompleteTasks);
     
     if (!process.env.OPENAI_API_KEY) {
       return errorResponse(res, 500, 'OpenAI API key not configured');
     }
 
-    // Create improved AI prompt that emphasizes using user's specific tasks
-    const systemPrompt = customSystemPrompt || `You are a personal assistant AI that creates personalized daily plans based on the user's specific incomplete tasks.
+    // Create base context that's always included
+    const baseContext = `CRITICAL CONTEXT - ALWAYS FOLLOW THESE REQUIREMENTS:
+- Current date: ${currentDate}
+- Current time: ${currentTime}
+- You MUST start scheduling tasks AFTER ${currentTime}, not from the beginning of the day
+- You MUST use the exact incomplete tasks provided by the user
+- If the current time is in the afternoon (after 12:00), focus on afternoon and evening tasks
 
-CRITICAL REQUIREMENTS:
-1. You MUST use the exact incomplete tasks provided by the user. Do not create generic tasks or suggestions.
-2. The current time is ${currentTime} on ${currentDate}. Start scheduling tasks AFTER this time, not from the beginning of the day.
-3. If the current time is in the afternoon (after 12:00), focus on afternoon and evening tasks.
+RESPONSE FORMAT - ALWAYS return a JSON object with:
+- plannedTasks: array of objects with {task: "exact user task", time: "HH:MM AM/PM", duration: "X hours/minutes"}
+- recommendations: array of 2-3 specific productivity tips  
+- estimatedDuration: total time estimate for all tasks`;
 
-Current date: ${currentDate}
-Current time: ${currentTime}
+    // Create system prompt - combine custom prompt with essential context
+    const systemPrompt = customSystemPrompt 
+      ? `${customSystemPrompt}\n\n${baseContext}`
+      : `You are a personal assistant AI that creates personalized daily plans based on the user's specific incomplete tasks.
+
+${baseContext}
 
 Create a structured daily plan that:
 1. Uses ALL the incomplete tasks provided by the user (use their exact wording)
@@ -84,11 +101,6 @@ Create a structured daily plan that:
 3. Considers the current time when planning (don't schedule tasks in the past)
 4. Provides realistic time estimates
 5. If no tasks are provided, create a general plan for the remaining day
-
-Respond with a JSON object containing:
-- plannedTasks: array of objects with {task: "exact user task", time: "HH:MM AM/PM", duration: "X hours/minutes"}
-- recommendations: array of 2-3 specific productivity tips
-- estimatedDuration: total time estimate for all tasks
 
 Be specific and practical. Use the user's exact task descriptions.`;
 
