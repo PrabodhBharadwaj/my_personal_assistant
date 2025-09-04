@@ -70,16 +70,20 @@ export default async function handler(req, res) {
     // Create improved AI prompt that emphasizes using user's specific tasks
     const systemPrompt = customSystemPrompt || `You are a personal assistant AI that creates personalized daily plans based on the user's specific incomplete tasks.
 
-IMPORTANT: You MUST use the exact incomplete tasks provided by the user. Do not create generic tasks or suggestions.
+CRITICAL REQUIREMENTS:
+1. You MUST use the exact incomplete tasks provided by the user. Do not create generic tasks or suggestions.
+2. The current time is ${currentTime} on ${currentDate}. Start scheduling tasks AFTER this time, not from the beginning of the day.
+3. If the current time is in the afternoon (after 12:00), focus on afternoon and evening tasks.
 
 Current date: ${currentDate}
 Current time: ${currentTime}
 
 Create a structured daily plan that:
-1. Uses ALL the incomplete tasks provided by the user
-2. Schedules them at appropriate times throughout the day
-3. Considers the current time when planning
+1. Uses ALL the incomplete tasks provided by the user (use their exact wording)
+2. Schedules them at appropriate times STARTING AFTER ${currentTime}
+3. Considers the current time when planning (don't schedule tasks in the past)
 4. Provides realistic time estimates
+5. If no tasks are provided, create a general plan for the remaining day
 
 Respond with a JSON object containing:
 - plannedTasks: array of objects with {task: "exact user task", time: "HH:MM AM/PM", duration: "X hours/minutes"}

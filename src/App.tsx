@@ -429,7 +429,7 @@ function AppContent() {
     if (!config.enableAI) {
       // Fallback to simple planning if AI is not available
       const incompleteItems = items.filter(
-        (item) => item.status !== 'completed' && item.item_type === 'capture'
+        (item) => item.status !== 'completed' && (item.item_type === 'capture' || item.item_type === 'task')
       );
     
     if (incompleteItems.length === 0) {
@@ -471,13 +471,22 @@ ${incompleteItems.length > 4 ? `\nRemaining items: ${incompleteItems.length - 4}
       }
 
       const incompleteItems = items.filter(
-        (item) => item.status !== 'completed' && item.item_type === 'capture'
+        (item) => item.status !== 'completed' && (item.item_type === 'capture' || item.item_type === 'task')
       );
       const currentDate = new Date().toLocaleDateString();
       const currentTime = new Date().toLocaleTimeString('en-US', { 
         hour: '2-digit', 
         minute: '2-digit',
         hour12: false 
+      });
+
+      // Debug: Log what we're sending to the API
+      console.log('🔍 Planning request data:', {
+        incompleteItems: incompleteItems.map(item => ({ content: item.content, item_type: item.item_type, status: item.status })),
+        incompleteTasks: incompleteItems.map((item) => item.content),
+        currentDate,
+        currentTime,
+        totalItems: items.length
       });
 
       const planningRequest: PlanningRequest = {
@@ -504,7 +513,7 @@ ${incompleteItems.length > 4 ? `\nRemaining items: ${incompleteItems.length - 4}
 
       // Fallback to simple planning
       const incompleteItems = items.filter(
-        (item) => item.status !== 'completed' && item.item_type === 'capture'
+        (item) => item.status !== 'completed' && (item.item_type === 'capture' || item.item_type === 'task')
       );
       if (incompleteItems.length > 0) {
         const fallbackPlan = `Daily Plan (${new Date().toLocaleDateString()}) - AI Unavailable:
