@@ -19,6 +19,14 @@ export async function apiCall<T>(
 ): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
   
+  // Debug: Log the API call details
+  console.log('🌐 API Call:', {
+    url,
+    endpoint,
+    method: options.method || 'GET',
+    body: options.body
+  });
+  
   try {
     const response = await fetch(url, {
       headers: {
@@ -53,6 +61,15 @@ export async function generateDailyPlan(request: {
   userContext?: string;
   customSystemPrompt?: string;
 }) {
+  // Debug: Log the request being sent
+  console.log('🔍 Sending planning request:', {
+    incompleteTasks: request.incompleteTasks,
+    currentDate: request.currentDate,
+    currentTime: request.currentTime,
+    userContext: request.userContext,
+    customSystemPrompt: request.customSystemPrompt
+  });
+  
   return apiCall(API_ENDPOINTS.PLAN, {
     method: 'POST',
     body: JSON.stringify(request),
