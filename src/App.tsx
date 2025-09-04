@@ -8,6 +8,7 @@ import type { DatabaseItem } from './config/supabase';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AuthPage from './components/Auth/AuthPage';
 import UserProfile from './components/UserProfile';
+import { debugEnvironmentVariables } from './utils/debug-env';
 
 interface CapturedItem {
   id: string;
@@ -66,12 +67,35 @@ function AppContent() {
     }
   };
 
+  // Debug environment variables on component mount
+  useEffect(() => {
+    debugEnvironmentVariables();
+  }, []);
+
   // Save custom system prompt to localStorage
   const saveCustomSystemPrompt = (prompt: string) => {
     localStorage.setItem('customSystemPrompt', prompt);
     setCustomSystemPrompt(prompt);
     setShowPromptEditor(false);
     console.log('Custom system prompt saved:', prompt);
+  };
+
+  // Load items from localStorage
+  const loadItemsFromLocalStorage = () => {
+    const savedItems = localStorage.getItem('personalAssistantItems');
+    if (savedItems) {
+      try {
+        const parsedItems = JSON.parse(savedItems).map(
+          (item: Record<string, unknown>) => ({
+          ...item,
+            timestamp: new Date(item.timestamp as string),
+          })
+        );
+        setItems(parsedItems);
+      } catch {
+        console.error('Error loading saved items');
+      }
+    }
   };
 
   // Load items from Supabase or localStorage
@@ -98,23 +122,6 @@ function AppContent() {
       }
     } else {
       loadItemsFromLocalStorage();
-    }
-  };
-
-  const loadItemsFromLocalStorage = () => {
-    const savedItems = localStorage.getItem('personalAssistantItems');
-    if (savedItems) {
-      try {
-        const parsedItems = JSON.parse(savedItems).map(
-          (item: Record<string, unknown>) => ({
-          ...item,
-            timestamp: new Date(item.timestamp as string),
-          })
-        );
-        setItems(parsedItems);
-      } catch {
-        console.error('Error loading saved items');
-      }
     }
   };
 

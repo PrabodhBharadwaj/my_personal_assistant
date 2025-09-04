@@ -63,18 +63,35 @@ export interface DailyPlan {
   completion_status: Record<string, unknown>;
 }
 
-// Supabase client class with error handling and connection testing
+// Supabase client class with lazy initialization
 export class SupabaseManager {
   private client: SupabaseClient | null = null;
-  private config: SupabaseConfig;
+  private config: SupabaseConfig | null = null;
   private isConnected: boolean = false;
   private connectionError: string | null = null;
+  private isInitialized: boolean = false;
 
   constructor() {
+    // Don't initialize immediately - wait for explicit initialization
+  }
+
+  /**
+   * Initialize Supabase client when needed
+   */
+  initialize(): boolean {
+    if (this.isInitialized) {
+      return this.config?.isConfigured || false;
+    }
+
     this.config = this.loadConfig();
+    this.isInitialized = true;
+
     if (this.config.isConfigured) {
       this.initializeClient();
+      return true;
     }
+
+    return false;
   }
 
   /**
@@ -104,7 +121,7 @@ export class SupabaseManager {
    */
   private initializeClient(): void {
     try {
-      if (!this.config.isConfigured) {
+      if (!this.config?.isConfigured) {
         throw new Error('Supabase not configured');
       }
 
@@ -130,9 +147,33 @@ export class SupabaseManager {
   }
 
   /**
+   * Get the Supabase client instance (lazy initialization)
+   */
+  getClient(): SupabaseClient | null {
+    if (!this.isInitialized) {
+      this.initialize();
+    }
+    return this.client;
+  }
+
+  /**
+   * Check if Supabase is configured and connected
+   */
+  isAvailable(): boolean {
+    if (!this.isInitialized) {
+      this.initialize();
+    }
+    return this.config?.isConfigured || false;
+  }
+
+  /**
    * Test connection to Supabase
    */
   async testConnection(): Promise<{ success: boolean; error?: string }> {
+    if (!this.isInitialized) {
+      this.initialize();
+    }
+
     if (!this.client) {
       return {
         success: false,
@@ -171,30 +212,20 @@ export class SupabaseManager {
   }
 
   /**
-   * Get the Supabase client instance
-   */
-  getClient(): SupabaseClient | null {
-    return this.client;
-  }
-
-  /**
-   * Check if Supabase is configured and connected
-   */
-  isAvailable(): boolean {
-    return this.config.isConfigured && this.isConnected;
-  }
-
-  /**
    * Get connection status and error information
    */
   getStatus(): {
     configured: boolean;
     connected: boolean;
     error: string | null;
-    config: SupabaseConfig;
+    config: SupabaseConfig | null;
   } {
+    if (!this.isInitialized) {
+      this.initialize();
+    }
+
     return {
-      configured: this.config.isConfigured,
+      configured: this.config?.isConfigured || false,
       connected: this.isConnected,
       error: this.connectionError,
       config: this.config,
@@ -205,6 +236,10 @@ export class SupabaseManager {
    * Initialize database tables if they don't exist
    */
   async initializeDatabase(): Promise<{ success: boolean; error?: string }> {
+    if (!this.isInitialized) {
+      this.initialize();
+    }
+
     if (!this.client) {
       return {
         success: false,
@@ -252,6 +287,10 @@ export class SupabaseManager {
     realtime: boolean;
     error?: string;
   }> {
+    if (!this.isInitialized) {
+      this.initialize();
+    }
+
     if (!this.client) {
       return {
         status: 'unhealthy',
@@ -323,8 +362,12 @@ export class SupabaseManager {
 // Create and export a singleton instance
 export const supabaseManager = new SupabaseManager();
 
-// Export the client for direct use
-export const supabase = supabaseManager.getClient();
+// Export a function to get the client (lazy initialization)
+export const getSupabaseClient = () => supabaseManager.getClient();
+
+// Export the client for backward compatibility (lazy initialization)
+// This will be properly typed and initialized when needed
+export const supabase = supabaseManager.getClient() as any;
 
 // Export types for external use
 export type { SupabaseClient };
