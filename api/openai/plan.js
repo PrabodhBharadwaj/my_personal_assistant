@@ -43,7 +43,7 @@ export default async function handler(req, res) {
     });
 
     // Validate request body
-    const { incompleteTasks, currentDate, currentTime } = req.body;
+    const { incompleteTasks, currentDate, currentTime, userContext, customSystemPrompt } = req.body;
     
     const missing = validateRequiredFields(req.body, ['incompleteTasks', 'currentDate', 'currentTime']);
     if (missing.length > 0) {
@@ -57,9 +57,42 @@ export default async function handler(req, res) {
     }
 
     // Check for OpenAI API key
+    console.log('🔑 Environment variables check:', {
+      hasOpenAIKey: !!process.env.OPENAI_API_KEY,
+      openAIKeyLength: process.env.OPENAI_API_KEY?.length || 0,
+      allEnvKeys: Object.keys(process.env).filter(key => key.includes('OPENAI') || key.includes('API'))
+    });
+    
     if (!process.env.OPENAI_API_KEY) {
       return errorResponse(res, 500, 'OpenAI API key not configured');
     }
+
+    // Create improved AI prompt that emphasizes using user's specific tasks
+    const systemPrompt = customSystemPrompt || `You are a personal assistant AI that creates personalized daily plans based on the user's specific incomplete tasks.
+
+IMPORTANT: You MUST use the exact incomplete tasks provided by the user. Do not create generic tasks or suggestions.
+
+Current date: ${currentDate}
+Current time: ${currentTime}
+
+Create a structured daily plan that:
+1. Uses ALL the incomplete tasks provided by the user
+2. Schedules them at appropriate times throughout the day
+3. Considers the current time when planning
+4. Provides realistic time estimates
+
+Respond with a JSON object containing:
+- plannedTasks: array of objects with {task: "exact user task", time: "HH:MM AM/PM", duration: "X hours/minutes"}
+- recommendations: array of 2-3 specific productivity tips
+- estimatedDuration: total time estimate for all tasks
+
+Be specific and practical. Use the user's exact task descriptions.`;
+
+    const userPrompt = `Please create a daily plan for these incomplete tasks: ${incompleteTasks.join(', ')}
+
+${userContext ? `Additional context: ${userContext}` : ''}
+
+Remember: Use these exact tasks in your plan, don't create generic alternatives.`;
 
     // Make OpenAI API call
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -73,21 +106,11 @@ export default async function handler(req, res) {
         messages: [
           {
             role: 'system',
-            content: `You are a personal assistant AI that helps create daily plans. 
-            Current date: ${currentDate}
-            Current time: ${currentTime}
-            
-            Create a structured daily plan based on incomplete tasks. 
-            Respond with a JSON object containing:
-            - plannedTasks: array of tasks with time slots
-            - recommendations: array of productivity tips
-            - estimatedDuration: total time estimate
-            
-            Keep responses practical and time-conscious.`
+            content: systemPrompt
           },
           {
             role: 'user',
-            content: `Please create a daily plan for these incomplete tasks: ${incompleteTasks.join(', ')}`
+            content: userPrompt
           }
         ],
         max_tokens: 1000,
