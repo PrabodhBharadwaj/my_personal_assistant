@@ -32,11 +32,22 @@ export default async function handler(req, res) {
       return errorResponse(res, 429, 'Too many requests. Please try again later.');
     }
 
+    // Debug: Log the request body
+    console.log('🔍 API received request body:', {
+      incompleteTasks: req.body.incompleteTasks,
+      currentDate: req.body.currentDate,
+      currentTime: req.body.currentTime,
+      userContext: req.body.userContext,
+      customSystemPrompt: req.body.customSystemPrompt,
+      bodyKeys: Object.keys(req.body)
+    });
+
     // Validate request body
     const { incompleteTasks, currentDate, currentTime } = req.body;
     
     const missing = validateRequiredFields(req.body, ['incompleteTasks', 'currentDate', 'currentTime']);
     if (missing.length > 0) {
+      console.log('❌ Missing required fields:', missing);
       return errorResponse(res, 400, 'Missing required fields', { missingFields: missing });
     }
 

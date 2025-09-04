@@ -55,7 +55,13 @@ export function validateRequiredFields(body, requiredFields) {
   const missing = [];
   
   requiredFields.forEach(field => {
-    if (!body[field] || (Array.isArray(body[field]) && body[field].length === 0)) {
+    // Check if field exists and is not null/undefined
+    if (body[field] === undefined || body[field] === null) {
+      missing.push(field);
+    }
+    // For arrays, allow empty arrays (they're valid)
+    // For strings, check if they're empty
+    else if (typeof body[field] === 'string' && body[field].trim() === '') {
       missing.push(field);
     }
   });
