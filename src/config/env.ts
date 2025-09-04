@@ -3,7 +3,8 @@
 
 export const config = {
   // Backend API configuration
-  backendUrl: import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001',
+  // Use relative URLs for Vercel API routes (same domain)
+  backendUrl: import.meta.env.VITE_BACKEND_URL || '',
   
   // Supabase configuration
   supabaseUrl: import.meta.env.VITE_SUPABASE_URL || '',

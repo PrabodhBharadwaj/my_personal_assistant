@@ -1,7 +1,8 @@
 // Centralized API configuration and utilities
 // This file provides a consistent way to make API calls to the backend
 
-const API_BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+// Use relative URLs for Vercel API routes (same domain)
+const API_BASE = import.meta.env.VITE_BACKEND_URL || '';
 
 // API endpoint paths
 export const API_ENDPOINTS = {
